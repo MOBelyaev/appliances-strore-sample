@@ -19,6 +19,7 @@ import java.util.Optional;
 @Component
 public class ClientRepositoryJdbc implements ClientRepository {
 
+
     private final DataSource dataSource;
 
 
@@ -36,20 +37,16 @@ public class ClientRepositoryJdbc implements ClientRepository {
                 try (ResultSet resultSet = statement.executeQuery(query)) {
                     if (resultSet.next()) {
                         return resultSet.getLong("maxId");
-                    }
-                    else {
+                    } else {
                         throw new QueryException("Результат не найден!");
                     }
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
                     throw new QueryException("Ошибка при получении результата запроса!", e);
                 }
-            }
-            catch (SQLException e){
+            } catch (SQLException e) {
                 throw new QueryException("Ошибка при создании statement!", e);
             }
-        }
-        catch (SQLException e){
+        } catch (SQLException e) {
             throw new QueryException("Ошибка при открытии соединения!", e);
         }
     }
@@ -64,24 +61,21 @@ public class ClientRepositoryJdbc implements ClientRepository {
                 try (ResultSet resultSet = statement.executeQuery(query)) {
                     if (resultSet.next()) {
                         return resultSet.getLong("cnt");
-                    }
-                    else {
+                    } else {
                         throw new QueryException("Результат не найден!");
                     }
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
                     throw new QueryException("Ошибка при получении результата запроса!", e);
                 }
-            }
-            catch (SQLException e) {
+            } catch (SQLException e) {
                 throw new QueryException("Ошибка при создании statement!", e);
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             throw new QueryException("Ошибка при открытии соединения!", e);
         }
 
     }
+
 
     @Override
     public List<Client> findAll(long page, int pageSize) {
@@ -111,16 +105,13 @@ public class ClientRepositoryJdbc implements ClientRepository {
                         clients.add(map(resultSet));
                     }
                     return clients;
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
                     throw new QueryException("Ошибка при получении результата запроса!", e);
                 }
-            }
-            catch (SQLException e) {
+            } catch (SQLException e) {
                 throw new QueryException("Ошибка при создании statement!", e);
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             throw new QueryException("Ошибка при открытии соединения!", e);
         }
 
@@ -128,7 +119,47 @@ public class ClientRepositoryJdbc implements ClientRepository {
 
     @Override
     public Optional<Client> findById(long id) {
-        return Optional.empty();
+
+        //language=SQL
+        String query = "select c.id as id," +
+                "c.first_name as fname," +
+                "c.last_name as lname," +
+                "c.phone as phone," +
+                "c.city as city," +
+                "c.street as street," +
+                "c.house as house," +
+                "c.flat as flat " +
+                "from client c where c.id = ?";
+
+        try(Connection connection = dataSource.getConnection()){
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+
+                statement.setLong(1, id);
+
+                try(ResultSet  resultSet = statement.executeQuery()) {
+
+                    if (resultSet.next()){
+
+                        return Optional.of(map(resultSet));
+                    }
+
+                    return  Optional.empty();
+
+
+                }
+                catch (SQLException e) {
+                    throw new QueryException("Ошибка при получении результата запроса!", e);
+                }
+
+            }
+            catch (SQLException e) {
+                throw new QueryException("Ошибка при создании statement");
+            }
+        }
+        catch (SQLException e) {
+            throw new QueryException("Ошибка при открытии соединения!", e);
+        }
+
     }
 
     private Client map(ResultSet resultSet) throws SQLException {
@@ -173,12 +204,10 @@ public class ClientRepositoryJdbc implements ClientRepository {
                 }
 
                 statement.executeUpdate();
-            }
-            catch (SQLException e) {
+            } catch (SQLException e) {
                 throw new QueryException("Ошибка при создании statement!", e);
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             throw new QueryException("Ошибка при открытии соединения!", e);
         }
     }
