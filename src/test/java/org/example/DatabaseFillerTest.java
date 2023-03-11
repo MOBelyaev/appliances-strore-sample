@@ -4,12 +4,18 @@ import com.github.javafaker.Faker;
 import org.example.model.client.Address;
 import org.example.model.client.Client;
 import org.example.model.product.Product;
+import org.example.model.review.Review;
+import org.example.model.review.ReviewType;
 import org.example.repository.client.ClientRepository;
 import org.example.repository.product.ProductRepository;
+import org.example.repository.review.ReviewRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.time.ZoneId;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class DatabaseFillerTest {
 
@@ -71,23 +77,43 @@ public class DatabaseFillerTest {
     }
 
     @Test
-    public void probe() {
+    public void createReviews() {
+        long cnt = 15;
+
         ClientRepository clientRepository = context.getBean(ClientRepository.class);
-
-        List<Client> clients = clientRepository.findAll(0, 25);
-
-        for (Client client : clients) {
-            System.out.println(client);
-            System.out.println();
-        }
-
         ProductRepository productRepository = context.getBean(ProductRepository.class);
 
-        List<Product> products = productRepository.findAll(0, 25);
+        List<Product> products = productRepository.findAll(0, 100);
+        List<Client> clients = clientRepository.findAll(0, 100);
 
-        for (Product product : products) {
-            System.out.println(product);
-            System.out.println();
+        Assertions.assertFalse(products.isEmpty());
+        Assertions.assertFalse(clients.isEmpty());
+
+        ReviewRepository reviewRepository = context.getBean(ReviewRepository.class);
+
+        for (long i = 0; i < cnt; i++) {
+            int productIndex = faker.number().numberBetween(0, products.size());
+            int clientIndex = faker.number().numberBetween(0, clients.size());
+
+            Review review = createReview(products.get(productIndex), clients.get(clientIndex));
+
+            reviewRepository.saveReview(review);
         }
+    }
+
+    private Review createReview(Product product, Client author) {
+        Review review = new Review();
+
+        review.setType(ReviewType.REVIEW);
+        review.setDate(faker.date().future(20, TimeUnit.DAYS).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+        review.setProductRating(faker.number().numberBetween(1, 5));
+        review.setText(faker.letterify("?????????????????????????????????????????????????????"));
+        review.setLike(faker.number().numberBetween(0, 20));
+        review.setDislike(faker.number().numberBetween(0, 20));
+
+        review.setProduct(product);
+        review.setAuthor(author);
+
+        return review;
     }
 }
