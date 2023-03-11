@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface ClientRepository {
 
-    long findMaxId();
     long count();
     List<Client> findAll(long page, int pageSize);
     Optional<Client> findById(long id);

@@ -9,30 +9,30 @@ import org.example.repository.product.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.util.List;
+
 public class DatabaseFillerTest {
 
     private final static Faker faker = new Faker();
 
+    private final static AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext("org.example");
+
     @Test
     public void createProducts() {
-        final Long cnt = 1000L;
-
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext("org.example");
+        final long cnt = 1000L;
 
         ProductRepository repository = context.getBean(ProductRepository.class);
-        Long init = repository.findMaxId();
 
-        for (long i = init + 1L; i <= init + cnt; i++) {
-            repository.save(createProduct(i));
+        for (long i = 0; i < cnt; i++) {
+            repository.save(createProduct());
         }
 
         context.close();
     }
 
-    private Product createProduct(Long id) {
+    private Product createProduct() {
         Product product = new Product();
 
-        product.setId(id);
         product.setTitle(faker.code().ean8());
         product.setCount(faker.number().numberBetween(0, 20));
         product.setPrice(faker.number().randomDouble(2, 50, 5000));
@@ -46,21 +46,17 @@ public class DatabaseFillerTest {
     public void createClients() {
         final long cnt = 200L;
 
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext("org.example");
-
         ClientRepository repository = context.getBean(ClientRepository.class);
-        long init = repository.findMaxId();
 
-        for (long i = init + 1L; i <= init + cnt; i++) {
-            repository.save(createClient(i));
+        for (long i = 0; i < cnt; i++) {
+            repository.save(createClient());
         }
 
         context.close();
     }
 
-    private Client createClient(Long id) {
+    private Client createClient() {
         Client client = new Client();
-        client.setId(id);
         client.setFirstName(faker.name().firstName());
         client.setLastName(faker.name().lastName());
         client.setPhone(faker.numerify("8##########"));
@@ -72,5 +68,26 @@ public class DatabaseFillerTest {
         client.setAddress(address);
 
         return client;
+    }
+
+    @Test
+    public void probe() {
+        ClientRepository clientRepository = context.getBean(ClientRepository.class);
+
+        List<Client> clients = clientRepository.findAll(0, 25);
+
+        for (Client client : clients) {
+            System.out.println(client);
+            System.out.println();
+        }
+
+        ProductRepository productRepository = context.getBean(ProductRepository.class);
+
+        List<Product> products = productRepository.findAll(0, 25);
+
+        for (Product product : products) {
+            System.out.println(product);
+            System.out.println();
+        }
     }
 }

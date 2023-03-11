@@ -1,12 +1,12 @@
 
 create table if not exists vendor (
-    id bigint primary key,
+    id bigserial primary key,
     name varchar(255) not null,
     logo text
 );
 
 create table if not exists product (
-    id bigint primary key,
+    id bigserial primary key,
     title varchar(255) not null,
     photo text constraint photochk check(char_length(photo) <= 1024),
     price float8 not null,
@@ -18,7 +18,7 @@ create table if not exists product (
 
 
 create table if not exists client (
-    id bigint primary key,
+    id bigserial primary key,
     first_name text constraint fnamechk check(char_length(first_name) <= 255),
     last_name text constraint lnamechk check(char_length(last_name) <= 255),
     phone text constraint phonechk check(char_length(phone) <= 12),
