@@ -14,7 +14,7 @@ public class ClientServiceV1 implements ClientService {
 
     private final ClientRepository repository;
 
-    private ClientServiceV1(ClientRepository repository) {
+    public ClientServiceV1(ClientRepository repository) {
         this.repository = repository;
     }
 

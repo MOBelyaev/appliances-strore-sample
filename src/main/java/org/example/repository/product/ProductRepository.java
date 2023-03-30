@@ -8,7 +8,6 @@ import java.util.Optional;
 
 public interface ProductRepository {
 
-    Long findMaxId();
     Long count();
     List<Product> findAll(long page, int pageSize);
     Optional<Product> findById(long id);
