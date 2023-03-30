@@ -1,19 +1,20 @@
 package org.example.config;
 
+import liquibase.Contexts;
+import liquibase.LabelExpression;
+import liquibase.Liquibase;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 @Component
@@ -40,14 +41,12 @@ public class DataSourceSupplier {
         this.dataSource.setUser(properties.username);
         this.dataSource.setPassword(properties.password);
 
-        if (properties.init) {
-            executeInitializingQueries(properties.initScript);
-        }
+        executeLiquibase();
     }
 
     private DatabaseProperties getDatabaseProperties() {
         try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("db.properties");
+            InputStream is = getClass().getClassLoader().getResourceAsStream("db/db.properties");
             if (is == null) {
                 throw new IllegalStateException("Файл db.properties не найден в ресурсах");
             }
@@ -58,8 +57,6 @@ public class DataSourceSupplier {
                     .url(properties.getProperty("url"))
                     .username(properties.getProperty("username"))
                     .password(properties.getProperty("password"))
-                    .init(Boolean.parseBoolean(properties.getProperty("init")))
-                    .initScript(properties.getProperty("init-script"))
                     .build();
         }
         catch (Exception e) {
@@ -67,41 +64,19 @@ public class DataSourceSupplier {
         }
     }
 
-    private void executeInitializingQueries(String script) {
-        log.info("Начало инициализации БД");
-        List<String> queries = getInitializingQueries(script);
+    private void executeLiquibase() {
         try (Connection connection = dataSource.getConnection()) {
-            try (Statement statement = connection.createStatement()) {
-                for (String query : queries) {
-                    statement.addBatch(query);
-                }
-                statement.executeBatch();
+            String changeLog = "db/changelog.xml";
+            JdbcConnection jdbcConnection = new JdbcConnection(connection);
+            try (Liquibase liquibase = new Liquibase(changeLog, new ClassLoaderResourceAccessor(), jdbcConnection)) {
+                liquibase.update(new Contexts(), new LabelExpression());
             }
-            catch (SQLException e) {
-                throw new IllegalStateException("Ошибка при инициализации БД");
+            catch (LiquibaseException e) {
+                log.error("Liquibase скрипты не исполнены", e);
             }
         }
         catch (SQLException e) {
-            throw new IllegalStateException("Ошибка при открытии соединения для инициализации БД");
-        }
-    }
-
-    private List<String> getInitializingQueries(String scriptPath) {
-        InputStream is = getClass().getClassLoader().getResourceAsStream(scriptPath);
-        if(is == null) {
-            throw new IllegalStateException("Не могу извлечъ SQL файл для инициализации");
-        }
-        try {
-            String source = new String(is.readAllBytes());
-            is.close();
-            ArrayList<String> queries = new ArrayList<>();
-            for (String query : StringUtils.split(source, ';')) {
-                queries.add(StringUtils.trim(query));
-            }
-            return queries;
-        }
-        catch (IOException e) {
-            throw new IllegalStateException("Ошибка при чтении файла инициализации");
+            log.error("Ошибка при открытии соединения", e);
         }
     }
 
