@@ -5,4 +5,6 @@
     <include file="db/V1_0_0_products.sql"/>
     <include file="db/V1_0_1_clients.sql"/>
     <include file="db/V1_0_2_reviews.sql"/>
+    <include file="db/V1_0_3_category.sql"/>
+    <include file="db/V1_0_4_products_add_category.sql"/>
 </databaseChangeLog>
